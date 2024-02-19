@@ -11,7 +11,9 @@ ObjectReference Property DepositBox Auto
 GlobalVariable Property LoanAccount Auto
 GlobalVariable Property LoanInterestRate Auto
 GlobalVariable Property LoanPayment Auto
+GlobalVariable Property LoanTotal Auto
 GlobalVariable Property LoanPaymentPercentage Auto
+Message Property LoanMessage Auto
 
 ;Account
     ;Balance
@@ -44,33 +46,53 @@ function openDepositBox()
 endFunction
 
 ;Loan
+    ;CalcPaymentAmount
+function CalcPaymentAmount()
+    int payment = (LoanTotal.GetValueInt() * LoanPaymentPercentage.GetValue()) as int
+
+    if(payment > LoanAccount.GetValueInt()) ;Special payment size needed.
+        LoanPayment.SetValueInt(LoanAccount.GetValueInt())
+    else
+        LoanPayment.SetValueInt(payment)
+    endif
+endFunction
+
     ;Take out
 function takeOutLoan(int amount)
-    int loanTotal = amount + (amount * LoanInterestRate.GetValue()) as int
-    LoanAccount.SetValueInt(loanTotal)
-    LoanPayment.SetValueInt((loanTotal * LoanPaymentPercentage.GetValue()) as int)
+    LoanTotal.SetValueInt(amount + (amount * LoanInterestRate.GetValue()) as int)
+    LoanAccount.SetValueInt(LoanTotal.GetValueInt())
+    LoanPayment.SetValueInt((LoanTotal.GetValueInt() * LoanPaymentPercentage.GetValue()) as int)
+    Game.GetPlayer().AddItem(Gold, amount)
 endFunction
 
     ;Payment regular player
 function paymentRegularPlayer()
     Game.GetPlayer().RemoveItem(Gold, LoanPayment.GetValueInt())
     LoanAccount.SetValue(LoanAccount.GetValueInt() - LoanPayment.GetValueInt())
+    LoanMessage.Show(LoanPayment.GetValueInt(), LoanAccount.GetValueInt())
+    CalcPaymentAmount()
 endFunction
 
     ;Payment all player
 function paymentAllPlayer()
     Game.GetPlayer().RemoveItem(Gold, LoanAccount.GetValueInt())
+    LoanMessage.Show(LoanAccount.GetValueInt(), 0)
     LoanAccount.SetValueInt(0)
+    CalcPaymentAmount()
 endFunction
 
     ;Payment regular bank
 function paymentRegularBank()
     BankAccount.SetValueInt(BankAccount.GetValueInt() - LoanPayment.GetValueInt())
     LoanAccount.SetValue(LoanAccount.GetValueInt() - LoanPayment.GetValueInt())
+    LoanMessage.Show(LoanPayment.GetValueInt(), LoanAccount.GetValueInt())
+    CalcPaymentAmount()
 endFunction
 
     ;Payment all bank
 function paymentAllBank()
     BankAccount.SetValueInt(BankAccount.GetValueInt() -  LoanAccount.GetValueInt())
+    LoanMessage.Show(LoanAccount.GetValueInt(), 0)
     LoanAccount.SetValueInt(0)
+    CalcPaymentAmount()
 endFunction 

@@ -16,7 +16,6 @@ Message Property InvestmentMessage Auto
 GlobalVariable Property LoanAccount Auto
 GlobalVariable Property LoanPayment Auto
 GlobalVariable Property LoanInterestRate Auto
-Message Property LoanMessage Auto
 Message Property LoanFailMessage Auto
 
 event OnInit()
@@ -46,24 +45,14 @@ event OnUpdateGameTime()
 
     ;Handle loan(if they have one)
     if(LoanAccount.GetValueInt() > 0)
-        int payment = 0;
-
-        ;If loan payment is bigger than remaining total(special last payment size needed)
-        if(LoanPayment.GetValueInt() > LoanAccount.GetValueInt())
-            payment = LoanAccount.GetValueInt()                                                     ;Set value to remaining(for wierd percentages)
-        ;else
-        else
-           payment = LoanPayment.GetValueInt()                                                      ;Set value to standard payment
-        endIf
+        (GetOwningQuest() as _SB_Quest).CalcPaymentAmount()                                         ;Calc payment
 
         ;If can pay
-        if(payment <= BankAccount.GetValueInt())
-            BankAccount.SetValueInt(BankAccount.GetValueInt() - payment)                            ;Subtract from bank
-            LoanAccount.SetValueInt(LoanAccount.GetValueInt() - payment)                            ;Subtract from loan total
-            LoanMessage.Show(payment, LoanAccount.GetValueInt())                                    ;Tell player about this
+        if(LoanPayment.GetValueInt() <= BankAccount.GetValueInt())
+            (GetOwningQuest() as _SB_Quest).paymentRegularBank()                                    ;Do regular payment
         ;If not
         else
-            LoanFailMessage.Show(payment)                                                           ;Tell player payment failed.
+            LoanFailMessage.Show(LoanPayment.GetValueInt())                                         ;Tell player payment failed.
         endIf
     endIf
 
